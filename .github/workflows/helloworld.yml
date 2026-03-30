@@ -4,39 +4,40 @@ on:
   branches: [ main ]
 jobs:
  build-and-deploy:
- runs-on: ubuntu-latest
- steps:
-  - name: Checkout Code
-    uses: actions/checkout@v4
+  runs-on: ubuntu-latest
+ 
+  steps:
+   - name: Checkout Code
+     uses: actions/checkout@v4
 
-  - name: Set up JDK
-    uses: actions/setup-java@v4
-    with:
-     java-version: '17'
-     distribution: 'temurin'
-     cache: maven
+   - name: Set up JDK
+     uses: actions/setup-java@v4
+     with:
+      java-version: '17'
+      distribution: 'temurin'
+      cache: maven
 
-  - name: Build with Maven
-    run: mvn clean package
+   - name: Build with Maven
+     run: mvn clean package
 
-  - name: Copy WAR to EC2
-    uses: appleboy/scp-action@v0.1.7
-    with:
-     host: ${{ secrets.EC2_HOST }}
-     username: ${{ secrets.EC2_USER }}
-     key: ${{ secrets.EC2_SSH_KEY }}
+   - name: Copy WAR to EC2
+     uses: appleboy/scp-action@v0.1.7
+     with:
+      host: ${{ secrets.EC2_HOST }}
+      username: ${{ secrets.EC2_USER }}
+      key: ${{ secrets.EC2_SSH_KEY }}
  # Path to your built war file
-     source: "target/*.war"
+      source: "target/*.war"
  # Path where Tomcat looks for apps (usually /var/lib/tomcat/webapps)
-     target: "/home/ubuntu/deploy-temp"
-     strip_components: 1
+      target: "/home/ubuntu/deploy-temp"
+      strip_components: 1
 
-  - name: Move to Webapps & Restart
-    uses: appleboy/ssh-action@v1.0.3
-    with:
-     host: ${{ secrets.EC2_HOST }}
-     username: ${{ secrets.EC2_USER }}
-     key: ${{ secrets.EC2_SSH_KEY }}
-     script: |
-      sudo mv /home/ubuntu/deploy-temp/*.war /var/lib/tomcat/webapps/ROOT.war
-      sudo systemctl restart tomcat
+   - name: Move to Webapps & Restart
+     uses: appleboy/ssh-action@v1.0.3
+     with:
+      host: ${{ secrets.EC2_HOST }}
+      username: ${{ secrets.EC2_USER }}
+      key: ${{ secrets.EC2_SSH_KEY }}
+      script: |
+       sudo mv /home/ubuntu/deploy-temp/*.war /var/lib/tomcat/webapps/ROOT.war
+       sudo systemctl restart tomcat
