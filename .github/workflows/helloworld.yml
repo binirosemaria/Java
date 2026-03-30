@@ -1,18 +1,42 @@
-name: hello-world-action
+name: Deploy WAR to EC2
 on:
-  push:
-   branches: [main]
+ push:
+  branches: [ main ]
 jobs:
- demo:
-  runs-on: ubuntu-latest
-  steps:
-   # This step "downloads" your repository code onto the runner
-   - name: Checkout code
-     uses: actions/checkout@v4
-   
-   - name: greetings
-     run: echo "hello world"
+ build-and-deploy:
+ runs-on: ubuntu-latest
+ steps:
+  - name: Checkout Code
+    uses: actions/checkout@v4
 
-   # This new step proves the runner can now see your files
-   - name: List files
-     run: ls -R
+  - name: Set up JDK
+    uses: actions/setup-java@v4
+    with:
+     java-version: '17'
+     distribution: 'temurin'
+     cache: maven
+
+  - name: Build with Maven
+    run: mvn clean package
+
+  - name: Copy WAR to EC2
+    uses: appleboy/scp-action@v0.1.7
+    with:
+     host: ${{ secrets.EC2_HOST }}
+     username: ${{ secrets.EC2_USER }}
+     key: ${{ secrets.EC2_SSH_KEY }}
+ # Path to your built war file
+     source: "target/*.war"
+ # Path where Tomcat looks for apps (usually /var/lib/tomcat/webapps)
+     target: "/home/ubuntu/deploy-temp"
+     strip_components: 1
+
+  - name: Move to Webapps & Restart
+    uses: appleboy/ssh-action@v1.0.3
+    with:
+     host: ${{ secrets.EC2_HOST }}
+     username: ${{ secrets.EC2_USER }}
+     key: ${{ secrets.EC2_SSH_KEY }}
+     script: |
+      sudo mv /home/ubuntu/deploy-temp/*.war /var/lib/tomcat/webapps/ROOT.war
+      sudo systemctl restart tomcat
