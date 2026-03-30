@@ -6,5 +6,5 @@ jobs:
  demo:
   runs-on: ubuntu-latest
   steps:
-   - name: greetings
+   - name: HelloGreetings
      run: echo "hello world"
