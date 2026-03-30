@@ -39,5 +39,5 @@ jobs:
       username: ${{ secrets.EC2_USER }}
       key: ${{ secrets.EC2_SSH_KEY }}
       script: |
-       sudo mv /home/ubuntu/deploy-temp/*.war /var/lib/tomcat/webapps/ROOT.war
+       sudo mv /home/ubuntu/deploy-temp/*.war /opt/tomcat/webapps/ROOT.war
        sudo systemctl restart tomcat
