@@ -8,11 +8,11 @@ jobs:
   steps:
    # This step "downloads" your repository code onto the runner
    - name: Checkout code
-   uses: actions/checkout@v4
+     uses: actions/checkout@v4
    
    - name: greetings
-   run: echo "hello world"
+     run: echo "hello world"
 
    # This new step proves the runner can now see your files
    - name: List files
-   run: ls -R
+     run: ls -R
