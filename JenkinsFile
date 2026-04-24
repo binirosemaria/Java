@@ -70,7 +70,7 @@ stage('Push Image') {
             }
         }
 
-stage('Copy file to remote server') {
+stage('Copy file to remote server - kubernetes machine') {
             steps {
                 sshagent(['ssh-key-id']) {
                     sh '''
