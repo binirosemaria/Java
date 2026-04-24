@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: my-app-container
-          image: binirosemaria/myapp:latest
+          image: binirosemaria/helloworld:latest
           ports:
             - containerPort: 8080

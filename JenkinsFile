@@ -2,7 +2,7 @@ pipeline {
     agent any
 
 environment {
-        DOCKER_IMAGE = "binirosemaria/myapp"
+        DOCKER_IMAGE = "binirosemaria/helloworld"
         DOCKER_TAG = "latest"
     }
 
@@ -40,7 +40,7 @@ sudo usermod -aG docker jenkins
 stage('docker') {
             steps {
 sh '''
-               docker build -t myapp:latest  .
+               docker build -t helloworld:latest  .
 '''
 
             }
@@ -64,7 +64,7 @@ stage('Login to Docker Hub') {
 stage('Push Image') {
             steps {
                 sh """
-                docker tag myapp:latest binirosemaria/myapp:latest
+                docker tag helloworld:latest binirosemaria/helloworld:latest
                 docker push $DOCKER_IMAGE:$DOCKER_TAG
                 """
             }
@@ -75,7 +75,7 @@ stage('Copy file to remote server') {
                 sshagent(['ssh-key-id']) {
                     sh '''
         
-                        scp -o StrictHostKeyChecking=no manifest/*.yml ec2-user@172.31.36.197:/home/ec2-user/manifest/
+                        scp -o StrictHostKeyChecking=no manifest/*.yml ec2-user@13.208.42.249:/home/ec2-user/manifest/
                     '''
                 }
             }
@@ -85,7 +85,7 @@ stage('run the kubectl') {
             steps {
                 sshagent(['ssh-key-id']) {
                     sh '''
-			ssh -o StrictHostKeyChecking=no ec2-user@172.31.36.197 "cd /home/ec2-user/manifest/ && kubectl apply -f . && kubectl port-forward --address 0.0.0.0  svc/my-app-service 8080:8080"
+			ssh -o StrictHostKeyChecking=no ec2-user@13.208.42.249 "cd /home/ec2-user/manifest/ && kubectl apply -f ."
                     '''
                 }
             }
