@@ -49,7 +49,7 @@ sh '''
 stage('Login to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
+                    credentialsId: 'DockerToken',
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
@@ -72,7 +72,7 @@ stage('Push Image') {
 
 stage('Copy file to remote server - kubernetes machine') {
             steps {
-                sshagent(['ssh-key-id']) {
+                sshagent(['SSHToken']) {
                     sh '''
         
                         scp -o StrictHostKeyChecking=no manifest/*.yml ec2-user@13.208.42.249:/home/ec2-user/manifest/
@@ -83,7 +83,7 @@ stage('Copy file to remote server - kubernetes machine') {
 
 stage('run the kubectl') {
             steps {
-                sshagent(['ssh-key-id']) {
+                sshagent(['SSHToken']) {
                     sh '''
 			ssh -o StrictHostKeyChecking=no ec2-user@13.208.42.249 "cd /home/ec2-user/manifest/ && kubectl apply -f ."
                     '''
