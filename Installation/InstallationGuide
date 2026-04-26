@@ -1,0 +1,5 @@
+terraform - 5 instances : jenkins, k8masternode, k8workernode01,k8workernode02, monitoring
+
+jenkins server: follow steps in jenkinsInstallation guide
+
+k8 cluster setup: follow steps in K8 clusterSetUp guide
