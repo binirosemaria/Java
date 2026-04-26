@@ -1,52 +1,38 @@
 pipeline {
     agent any
 
-environment {
+    environment {
         DOCKER_IMAGE = "binirosemaria/helloworld"
-        DOCKER_TAG = "latest"
+        // Using BUILD_NUMBER for unique tagging to trigger K8s rollouts
+        DOCKER_TAG   = "${env.BUILD_NUMBER}" 
+        K8S_MASTER   = "13.208.42.249"
+        K8S_USER     = "ec2-user"
     }
 
     stages {
-        stage('Git installation') {
-            steps {
-                //
-sh 'sudo yum install git -y'
-            }
-        }
-        stage('git clone') {
+        stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/binirosemaria/Java.git'
             }
         }
-        stage('Maven installation') {
+
+        stage('Build Artifact') {
             steps {
-                sh 'sudo yum install maven -y'
-            }
-        }
-stage('Build war') {
-            steps {
+                // Assumes Maven is installed on the agent
                 sh 'mvn clean package'
             }
         }
-stage('docker Installation') {
-            steps {
-               sh ''' sudo yum install docker -y
-                  sudo systemctl start docker
-sudo systemctl enable docker
-sudo usermod -aG docker jenkins
-                ''' 
-            }
-        }
-stage('docker') {
-            steps {
-sh '''
-               docker build -t helloworld:latest  .
-'''
 
+        stage('Docker Build & Tag') {
+            steps {
+                sh """
+                docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+                """
             }
         }
 
-stage('Login to Docker Hub') {
+        stage('Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'DockerToken',
@@ -54,45 +40,42 @@ stage('Login to Docker Hub') {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh """
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+                    docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    docker push ${DOCKER_IMAGE}:latest
                     """
                 }
             }
         }
 
-
-stage('Push Image') {
-            steps {
-                sh """
-                docker tag helloworld:latest binirosemaria/helloworld:latest
-                docker push $DOCKER_IMAGE:$DOCKER_TAG
-                """
-            }
-        }
-
-stage('Copy file to remote server - kubernetes machine') {
+        stage('Deploy to Kubeadm Cluster') {
             steps {
                 sshagent(['SSHToken']) {
-                    sh '''
-        
-                        scp -o StrictHostKeyChecking=no manifest/*.yml ec2-user@13.208.42.249:/home/ec2-user/manifest/
-                    '''
+                    sh """
+                    # Create directory if it doesn't exist
+                    ssh -o StrictHostKeyChecking=no ${K8S_USER}@${K8S_MASTER} "mkdir -p /home/${K8S_USER}/manifest/"
+                    
+                    # Copy manifests
+                    scp -o StrictHostKeyChecking=no manifest/*.yml ${K8S_USER}@${K8S_MASTER}:/home/${K8S_USER}/manifest/
+                    
+                    # Update the image in the deployment and apply
+                    # This replaces the image tag dynamically in your YAML before applying
+                    ssh -o StrictHostKeyChecking=no ${K8S_USER}@${K8S_MASTER} "
+                        cd /home/${K8S_USER}/manifest/
+                        sed -i 's|${DOCKER_IMAGE}:.*|${DOCKER_IMAGE}:${DOCKER_TAG}|g' *.yml
+                        kubectl apply -f .
+                    "
+                    """
                 }
             }
         }
-
-stage('run the kubectl') {
-            steps {
-                sshagent(['SSHToken']) {
-                    sh '''
-			ssh -o StrictHostKeyChecking=no ec2-user@13.208.42.249 "cd /home/ec2-user/manifest/ && kubectl apply -f ."
-                    '''
-                }
-            }
+    }
+    
+    post {
+        always {
+            sh 'docker logout'
+            // Clean up workspace to save disk space
+            cleanWs()
         }
-
-
-
-
     }
 }
