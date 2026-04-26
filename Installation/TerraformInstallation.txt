@@ -1,0 +1,13 @@
+Install terraform:
+1) download zip file for windows from official website. https://developer.hashicorp.com/terraform/install
+2) extract the files to a location.
+3) copy main.tf to the same folder
+4) cmd at the location.
+5) run the below commands.
+
+> terraform init
+> terraform plan
+> terraform apply
+
+To delete the instances, run the below command:
+> terraform destroy
