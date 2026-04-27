@@ -5,7 +5,7 @@ pipeline {
         DOCKER_IMAGE = "binirosemaria/helloworld"
         // Using BUILD_NUMBER for unique tagging to trigger K8s rollouts
         DOCKER_TAG   = "${env.BUILD_NUMBER}" 
-        K8S_MASTER   = "13.208.42.249"
+        K8S_MASTER   = "56.155.38.136"
         K8S_USER     = "ec2-user"
     }
 
